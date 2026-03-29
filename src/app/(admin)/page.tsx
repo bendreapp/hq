@@ -46,28 +46,28 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Therapists"
-          value={stats.totalTherapists}
-          sub={`+${stats.newTherapists30d} this month`}
+          value={stats.total_therapists}
+          sub={`+${stats.new_therapists_30d} this month`}
           icon={Users}
           color="bg-sage-bg text-sage"
         />
         <StatCard
           label="Total Clients"
-          value={stats.totalClients}
-          sub={`+${stats.newClients30d} this month`}
+          value={stats.total_clients}
+          sub={`+${stats.new_clients_30d} this month`}
           icon={UserPlus}
           color="bg-info/10 text-info"
         />
         <StatCard
           label="Total Sessions"
-          value={stats.totalSessions}
-          sub={`${stats.completedSessions} completed`}
+          value={stats.total_sessions}
+          sub={`${stats.completed_sessions} completed`}
           icon={CalendarDays}
           color="bg-success/10 text-success"
         />
         <StatCard
           label="Waitlist"
-          value={stats.waitlistCount}
+          value={stats.waitlist_count}
           icon={Clock}
           color="bg-warning/10 text-warning"
         />

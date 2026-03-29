@@ -1,122 +1,116 @@
-import { createAdminClient } from "./supabase/server";
+import { createClient } from "./supabase/server";
 
-export async function getPlatformStats() {
-  const sb = createAdminClient();
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8095";
 
-  const [therapists, clients, sessions, waitlist] = await Promise.all([
-    sb.from("therapists").select("id", { count: "exact", head: true }),
-    sb.from("clients").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    sb.from("sessions").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    sb.from("waitlist").select("id", { count: "exact", head: true }),
-  ]);
+async function adminFetch<T = unknown>(path: string, params?: Record<string, string>): Promise<T> {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  const completedSessions = await sb
-    .from("sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "completed")
-    .is("deleted_at", null);
+  const url = new URL(`${API_BASE}${path}`);
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  }
 
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
-  const newTherapists = await sb
-    .from("therapists")
-    .select("id", { count: "exact", head: true })
-    .gte("created_at", thirtyDaysAgo);
-
-  const newClients = await sb
-    .from("clients")
-    .select("id", { count: "exact", head: true })
-    .gte("created_at", thirtyDaysAgo)
-    .is("deleted_at", null);
-
-  return {
-    totalTherapists: therapists.count ?? 0,
-    totalClients: clients.count ?? 0,
-    totalSessions: sessions.count ?? 0,
-    completedSessions: completedSessions.count ?? 0,
-    waitlistCount: waitlist.count ?? 0,
-    newTherapists30d: newTherapists.count ?? 0,
-    newClients30d: newClients.count ?? 0,
-  };
-}
-
-export async function getTherapists() {
-  const sb = createAdminClient();
-  const { data, error } = await sb
-    .from("therapists")
-    .select("id, full_name, display_name, phone, slug, timezone, booking_page_active, created_at, updated_at")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getTherapistDetail(id: string) {
-  const sb = createAdminClient();
-  const { data, error } = await sb
-    .from("therapists")
-    .select("id, full_name, display_name, phone, slug, timezone, qualifications, booking_page_active, created_at, updated_at")
-    .eq("id", id)
-    .single();
-
-  if (error) throw error;
-
-  const [clientCount, sessionCount, completedCount] = await Promise.all([
-    sb.from("clients").select("id", { count: "exact", head: true }).eq("therapist_id", id).is("deleted_at", null),
-    sb.from("sessions").select("id", { count: "exact", head: true }).eq("therapist_id", id).is("deleted_at", null),
-    sb.from("sessions").select("id", { count: "exact", head: true }).eq("therapist_id", id).eq("status", "completed"),
-  ]);
-
-  return {
-    ...data,
-    clientCount: clientCount.count ?? 0,
-    sessionCount: sessionCount.count ?? 0,
-    completedCount: completedCount.count ?? 0,
-  };
-}
-
-export async function getWaitlist() {
-  const sb = createAdminClient();
-  const { data, error } = await sb
-    .from("waitlist")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getRecentSessions(limit = 50) {
-  const sb = createAdminClient();
-  const { data, error } = await sb
-    .from("sessions")
-    .select("id, therapist_id, client_id, status, starts_at, ends_at, duration_mins, created_at")
-    .is("deleted_at", null)
-    .order("starts_at", { ascending: false })
-    .limit(limit);
-
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getSignupsByDay(days = 30) {
-  const sb = createAdminClient();
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-  const { data, error } = await sb
-    .from("therapists")
-    .select("created_at")
-    .gte("created_at", since)
-    .order("created_at", { ascending: true });
-
-  if (error) throw error;
-
-  const byDay: Record<string, number> = {};
-  (data ?? []).forEach((t) => {
-    const day = t.created_at.slice(0, 10);
-    byDay[day] = (byDay[day] ?? 0) + 1;
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${session?.access_token ?? ""}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
   });
 
-  return Object.entries(byDay).map(([date, count]) => ({ date, count }));
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Admin API error ${res.status}: ${body}`);
+  }
+
+  return res.json();
+}
+
+export interface PlatformStats {
+  total_therapists: number;
+  total_clients: number;
+  total_sessions: number;
+  completed_sessions: number;
+  waitlist_count: number;
+  new_therapists_30d: number;
+  new_clients_30d: number;
+}
+
+export interface TherapistRow {
+  id: string;
+  full_name: string;
+  display_name: string | null;
+  phone: string | null;
+  slug: string;
+  timezone: string;
+  booking_page_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WaitlistRow {
+  id: string;
+  email: string;
+  source: string;
+  created_at: string;
+}
+
+export interface SessionRow {
+  id: string;
+  therapist_id: string;
+  client_id: string;
+  status: string;
+  starts_at: string;
+  ends_at: string;
+  duration_mins: number;
+  created_at: string;
+}
+
+export interface SignupDay {
+  date: string;
+  count: number;
+}
+
+export interface TherapistDetail extends TherapistRow {
+  qualifications: string | null;
+  client_count: number;
+  session_count: number;
+  completed_count: number;
+}
+
+export function getPlatformStats() {
+  return adminFetch<PlatformStats>("/api/v1/admin/stats");
+}
+
+export function getTherapists() {
+  return adminFetch<TherapistRow[]>("/api/v1/admin/therapists");
+}
+
+export function getTherapistDetail(id: string) {
+  return adminFetch<TherapistDetail>(`/api/v1/admin/therapists/${id}`);
+}
+
+export function getWaitlist() {
+  return adminFetch<WaitlistRow[]>("/api/v1/admin/waitlist");
+}
+
+export function getRecentSessions(limit = 50) {
+  return adminFetch<SessionRow[]>("/api/v1/admin/sessions/recent", { limit: String(limit) });
+}
+
+export function getSignupsByDay(days = 30) {
+  return adminFetch<SignupDay[]>("/api/v1/admin/signups-by-day", { days: String(days) });
+}
+
+export interface ClientStats {
+  total: number;
+  active: number;
+  inactive: number;
+  categories: { category: string; count: number }[];
+  growth_by_month: { month: string; count: number }[];
+}
+
+export function getClientStats() {
+  return adminFetch<ClientStats>("/api/v1/admin/clients/stats");
 }
