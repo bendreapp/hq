@@ -45,7 +45,7 @@ export async function getTherapists() {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("therapists")
-    .select("id, full_name, display_name, email, phone, slug, timezone, booking_page_active, created_at, updated_at")
+    .select("id, full_name, display_name, phone, slug, timezone, booking_page_active, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -56,7 +56,7 @@ export async function getTherapistDetail(id: string) {
   const sb = createAdminClient();
   const { data, error } = await sb
     .from("therapists")
-    .select("id, full_name, display_name, email, phone, slug, timezone, qualifications, specializations, booking_page_active, created_at, updated_at")
+    .select("id, full_name, display_name, phone, slug, timezone, qualifications, booking_page_active, created_at, updated_at")
     .eq("id", id)
     .single();
 

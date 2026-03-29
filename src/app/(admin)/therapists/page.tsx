@@ -22,7 +22,7 @@ export default async function TherapistsPage() {
           <thead>
             <tr className="border-b border-border text-left">
               <th className="px-5 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Name</th>
-              <th className="px-5 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Email</th>
+              <th className="px-5 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Phone</th>
               <th className="px-5 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Slug</th>
               <th className="px-5 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Booking</th>
               <th className="px-5 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Joined</th>
@@ -44,7 +44,7 @@ export default async function TherapistsPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-3 text-ink-secondary">{t.email}</td>
+                <td className="px-5 py-3 text-ink-secondary">{t.phone ?? "—"}</td>
                 <td className="px-5 py-3">
                   {t.slug ? (
                     <code className="text-xs bg-bg px-2 py-0.5 rounded text-sage font-mono">{t.slug}</code>

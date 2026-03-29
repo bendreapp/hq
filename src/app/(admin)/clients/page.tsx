@@ -8,8 +8,8 @@ export default async function ClientsPage() {
 
   const [total, active, inactive] = await Promise.all([
     sb.from("clients").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    sb.from("clients").select("id", { count: "exact", head: true }).eq("status", "active").is("deleted_at", null),
-    sb.from("clients").select("id", { count: "exact", head: true }).eq("status", "inactive").is("deleted_at", null),
+    sb.from("clients").select("id", { count: "exact", head: true }).eq("is_active", true).is("deleted_at", null),
+    sb.from("clients").select("id", { count: "exact", head: true }).eq("is_active", false).is("deleted_at", null),
   ]);
 
   // Category breakdown
