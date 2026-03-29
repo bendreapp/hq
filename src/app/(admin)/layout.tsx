@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Shield, LayoutDashboard, Users, CalendarDays, Clock, UserPlus } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -9,7 +11,14 @@ const navItems = [
   { href: "/clients", label: "Clients", icon: Clock },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Defense-in-depth: verify auth server-side in addition to middleware
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}

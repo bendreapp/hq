@@ -1,10 +1,21 @@
 import { createClient } from "./supabase/server";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8095";
+const API_BASE = process.env.API_URL || "http://localhost:8095";
 
 async function adminFetch<T = unknown>(path: string, params?: Record<string, string>): Promise<T> {
   const supabase = await createClient();
+
+  // Validate the user first (server-side verification)
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    throw new Error("Not authenticated");
+  }
+
+  // Get session for the access token
   const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("No valid session token");
+  }
 
   const url = new URL(`${API_BASE}${path}`);
   if (params) {
@@ -13,7 +24,7 @@ async function adminFetch<T = unknown>(path: string, params?: Record<string, str
 
   const res = await fetch(url.toString(), {
     headers: {
-      Authorization: `Bearer ${session?.access_token ?? ""}`,
+      Authorization: `Bearer ${session.access_token}`,
       "Content-Type": "application/json",
     },
     cache: "no-store",
