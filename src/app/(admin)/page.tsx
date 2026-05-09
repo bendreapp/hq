@@ -1,5 +1,5 @@
-import { getPlatformStats, getSignupsByDay, getWaitlist } from "@/lib/queries";
-import { Users, UserPlus, CalendarDays, Clock, BarChart3, TrendingUp } from "lucide-react";
+import { getPlatformStats, getSignupsByDay, getWaitlist, getRevenueStats } from "@/lib/queries";
+import { Users, UserPlus, CalendarDays, Clock, BarChart3, TrendingUp, IndianRupee, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +24,19 @@ function StatCard({ label, value, sub, icon: Icon, color }: {
   );
 }
 
+function formatInr(paise: number) {
+  const rupees = paise / 100;
+  if (rupees >= 100000) return `₹${(rupees / 100000).toFixed(1)}L`;
+  if (rupees >= 1000) return `₹${(rupees / 1000).toFixed(1)}K`;
+  return `₹${rupees.toLocaleString("en-IN")}`;
+}
+
 export default async function DashboardPage() {
-  const [stats, signups, waitlist] = await Promise.all([
+  const [stats, signups, waitlist, revenue] = await Promise.all([
     getPlatformStats(),
     getSignupsByDay(30),
     getWaitlist(),
+    getRevenueStats().catch(() => null),
   ]);
 
   const recentWaitlist = waitlist.slice(0, 5);
@@ -73,8 +81,41 @@ export default async function DashboardPage() {
         />
       </div>
 
+      {/* Revenue stats */}
+      {revenue && (
+        <div>
+          <h2 className="text-sm font-semibold text-ink mb-3">Revenue Overview</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-surface border border-border rounded-xl p-5">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-sage-bg text-sage mb-3">
+                <IndianRupee size={18} />
+              </div>
+              <div className="text-2xl font-bold text-ink">{formatInr(revenue.total_invoiced)}</div>
+              <div className="text-xs text-ink-secondary mt-0.5">Total Invoiced</div>
+              <div className="text-[10px] text-ink-muted mt-1">{revenue.invoice_count} invoices</div>
+            </div>
+            <div className="bg-surface border border-border rounded-xl p-5">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-success/10 text-success mb-3">
+                <CheckCircle2 size={18} />
+              </div>
+              <div className="text-2xl font-bold text-success">{formatInr(revenue.total_collected)}</div>
+              <div className="text-xs text-ink-secondary mt-0.5">Collected</div>
+              <div className="text-[10px] text-ink-muted mt-1">{revenue.paid_count} paid</div>
+            </div>
+            <div className="bg-surface border border-border rounded-xl p-5">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-warning/10 text-warning mb-3">
+                <AlertCircle size={18} />
+              </div>
+              <div className="text-2xl font-bold text-warning">{formatInr(revenue.total_outstanding)}</div>
+              <div className="text-xs text-ink-secondary mt-0.5">Outstanding</div>
+              <div className="text-[10px] text-ink-muted mt-1">{revenue.invoice_count - revenue.paid_count} unpaid</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Signups chart placeholder */}
+        {/* Signups chart */}
         <div className="bg-surface border border-border rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp size={16} className="text-ink-secondary" />
