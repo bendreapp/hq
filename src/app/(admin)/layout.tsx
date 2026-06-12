@@ -21,8 +21,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/login");
   }
 
-  // Fetch counts for badges (best-effort, don't fail layout)
-  let stats = { total_therapists: 0, waitlist_count: 0 };
+  // Fetch counts for badges (best-effort, don't fail layout).
+  // `expiring_soon_count` from /admin/stats counts active therapists whose
+  // plan_expires_at falls within the next 7 days — actionable signal, unlike
+  // the previous "total therapists" pill which was just a headcount.
+  let stats = { expiring_soon_count: 0, waitlist_count: 0 };
   let leadsCount = 0;
   try {
     const [s, leads] = await Promise.all([getPlatformStats(), getLeads()]);
@@ -33,7 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const badges: Record<string, number> = {
-    "/therapists": stats.total_therapists,
+    "/therapists": stats.expiring_soon_count,
     "/leads": leadsCount,
     "/waitlist": stats.waitlist_count,
   };

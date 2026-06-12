@@ -154,6 +154,46 @@ export default async function TherapistDetailPage({
           />
           <InfoRow label="Timezone" value={therapist.timezone} />
           <InfoRow
+            label="Plan expires"
+            value={
+              therapist.plan_expires_at ? (
+                <span className="flex items-center gap-1.5 text-xs">
+                  {new Date(therapist.plan_expires_at).toLocaleString("en-IN", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    timeZone: "Asia/Kolkata",
+                  })}
+                  <span className="text-ink-muted">
+                    ({(() => {
+                      const days = Math.round(
+                        (new Date(therapist.plan_expires_at).getTime() - Date.now()) /
+                          86_400_000
+                      );
+                      if (days < 0) return `expired ${Math.abs(days)}d ago`;
+                      if (days === 0) return "today";
+                      return `in ${days}d`;
+                    })()})
+                  </span>
+                </span>
+              ) : (
+                "—"
+              )
+            }
+          />
+          <InfoRow
+            label="UPI ID"
+            value={
+              therapist.upi_id ? (
+                <code className="text-xs bg-bg px-2 py-0.5 rounded text-sage font-mono">
+                  {therapist.upi_id}
+                </code>
+              ) : (
+                <span className="text-ink-muted text-xs">Not set</span>
+              )
+            }
+          />
+          <InfoRow
             label="Booking Page"
             value={
               therapist.booking_page_active ? (

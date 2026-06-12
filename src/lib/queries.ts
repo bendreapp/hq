@@ -76,6 +76,9 @@ export interface PlatformStats {
   waitlist_count: number;
   new_therapists_30d: number;
   new_clients_30d: number;
+  /// Active therapists whose plan_expires_at is within the next 7 days.
+  /// Drives the sidebar Therapists badge for renewal chasing.
+  expiring_soon_count: number;
 }
 
 export interface TherapistRow {
@@ -89,6 +92,8 @@ export interface TherapistRow {
   booking_page_active: boolean;
   plan_selected: string | null;
   plan_status: string;
+  plan_expires_at: string | null;
+  upi_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -128,6 +133,8 @@ export interface TherapistDetail {
   booking_page_active: boolean;
   plan_selected: string | null;
   plan_status: string;
+  plan_expires_at: string | null;
+  upi_id: string | null;
   created_at: string;
   updated_at: string;
   client_count: number;
@@ -199,9 +206,13 @@ export function getRevenueStats() {
 }
 
 export function activatePlan(therapistId: string) {
-  return adminPost<{ status: string }>(`/api/v1/admin/therapists/${therapistId}/activate-plan`);
+  return adminPost<{ status: string; plan_expires_at: string }>(`/api/v1/admin/therapists/${therapistId}/activate-plan`);
 }
 
 export function suspendPlan(therapistId: string) {
   return adminPost<{ status: string }>(`/api/v1/admin/therapists/${therapistId}/suspend`);
+}
+
+export function extendPlan(therapistId: string) {
+  return adminPost<{ status: string; plan_expires_at: string }>(`/api/v1/admin/therapists/${therapistId}/extend-plan`);
 }
